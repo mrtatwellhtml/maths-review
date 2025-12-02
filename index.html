@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Foundational Mathematics II — Quest Review (Expanded)</title>
+  <style>
+    :root{--bg:#f6faf7;--card:#fff;--accent:#0b6e4f;--accent2:#0b9a6a;--muted:#6b7280}
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Arial;background:linear-gradient(180deg,#f6faf7,#e9f7ee);margin:0;color:#042018}
+    header{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between}
+    header h1{margin:0;font-size:18px}
+    .container{max-width:1200px;margin:22px auto;padding:0 18px}
+    .board{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .card{background:var(--card);padding:16px;border-radius:12px;box-shadow:0 8px 24px rgba(6,30,19,0.06)}
+    .topic-card{padding:12px;border-radius:10px;border:1px solid rgba(6,30,19,0.04);cursor:pointer}
+    .locked{opacity:0.45}
+    .lvl-badge{width:56px;height:56px;border-radius:10px;background:linear-gradient(180deg,var(--accent),var(--accent2));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800}
+    .muted{color:var(--muted)}
+    button{background:var(--accent);color:#fff;padding:10px 12px;border-radius:10px;border:0;font-weight:700}
+    .example{background:#fbfff9;border-radius:8px;padding:10px;margin:8px 0}
+    .quiz-item{margin-bottom:10px}
+    input[type="text"],textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eef0}
+    .progress{height:12px;background:#e6f3ee;border-radius:999px;overflow:hidden}
+    .progress > div{height:100%;background:var(--accent2);width:0%}
+    .badge{display:inline-block;padding:6px 8px;border-radius:999px;background:#eefcf1;color:#065f39;margin-right:6px;font-weight:700}
+    .center{text-align:center}
+    footer{max-width:1200px;margin:20px auto;padding:14px;color:var(--muted);font-size:13px}
+    @media (max-width:980px){.board{grid-template-columns:1fr}.aside{order:2}}
+  </style>
+</head>
+<body>
+  <header>
+    <div style="display:flex;gap:12px;align-items:center">
+      <div style="width:52px;height:52px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:900">T</div>
+      <div>
+        <h1>Foundational Mathematics II — Quest Review (Expanded)</h1>
+        <div class="muted">Complete topic quests, earn XP & badges — all practice mirrors the final exam structure.</div>
+      </div>
+    </div>
+    <div>
+      <button onclick="downloadProgress()">Export Progress</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="board">
+      <section>
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="lvl-badge" id="xp-badge">Lv 1</div>
+              <div>
+                <div style="font-weight:800" id="xp-text">0 XP</div>
+                <div class="muted small">Complete topic quizzes (≥70%) to earn XP and unlock next topic</div>
+              </div>
+            </div>
+            <div class="muted">Quests complete: <span id="quests-done">0</span>/<span id="quests-total">0</span></div>
+          </div>
+
+          <hr style="margin:12px 0;border:none;height:1px;background:rgba(6,30,19,0.06)">
+
+          <h3>Quest map: Topics</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px" id="topic-list"></div>
+
+          <div id="topic-area" style="margin-top:16px"></div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <h3>Practice dojo — timed drills</h3>
+          <p class="muted">Rapid-fire practice. Complete drills to earn +10 XP for good performance.</p>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button onclick="startDrill(3)">Easy (3)</button>
+            <button onclick="startDrill(5)">Medium (5)</button>
+            <button onclick="startDrill(7)">Hard (7)</button>
+          </div>
+          <div id="drill-area"></div>
+        </div>
+      </section>
+
+      <aside class="aside">
+        <div class="card">
+          <h4>Progress & Badges</h4>
+          <div style="margin-top:8px" id="badges"></div>
+          <div style="margin-top:10px">
+            <div class="muted">Overall completion</div>
+            <div class="progress" style="margin-top:8px"><div id="overall-prog" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h4>Admin Panel</h4>
+<p class="muted">Manage topics, edit questions, import notes, or reset class progress.</p>
+<button onclick="openAdmin()">Open Admin Panel</button>
+<div id="admin-panel" style="display:none;margin-top:10px;padding:10px;border:1px solid #e6eef0;border-radius:8px;background:#f9fffc">
+  <h4>Admin Controls</h4>
+  <p class="muted small">(All changes are saved locally.)</p>
+
+  <h5>Edit Topic Titles</h5>
+  <div id="admin-topic-edit"></div>
+  <hr>
+
+  <h5>Edit Questions</h5>
+  <p class="muted small">Select a topic to edit its practice questions.</p>
+  <select id="admin-topic-select" onchange="loadAdminQuestions()"></select>
+  <div id="admin-question-area" style="margin-top:10px"></div>
+  <hr>
+
+  <h5>Import Notes</h5>
+  <input type="file" id="file-input" accept=".pdf,.doc,.docx,.txt" />
+  <button style="margin-top:6px" onclick="importNotes()">Import Notes</button>
+  <hr>
+
+  <button onclick="resetProgress()" style="background:#b91c1c;color:#fff">Reset All Student Progress</button>
+</div>
+          <p class="muted small" style="margin-top:8px">(Imported notes are saved locally for teacher use.)</p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container muted">Site seeded from course outline and final exam files you provided. To integrate your OneDrive notes paste the public text or upload the file — I’ll attach examples and extra practice to each topic.</div>
+  </footer>
+
+  <script>
+    // --- Expanded topic data ---
+    const topics = [
+      {id:'t1',title:'Number Theory',xpTotal:60,locked:false,desc:'Types of numbers, place value, rounding, factors & primes',practice:[
+        {id:'t1q1',q:'Which set represents whole numbers?',type:'mcq',opts:['{1,2,3,...}','{0,1,2,3,...}','{..., -1,0,1,...}','{1/2,1/3,...}'],a:1},
+        {id:'t1q2',q:'Round 7,346 to the nearest hundred',type:'fill',a:'7400'},
+        {id:'t1q3',q:'Find LCM of 4 and 6',type:'short',a:'12'},
+        {id:'t1q4',q:'Is 29 prime?',type:'mcq',opts:['Yes','No'],a:0},
+        {id:'t1q5',q:'Place value: value of 5 in 5,703',type:'mcq',opts:['5','50','500','5000'],a:2},
+        {id:'t1q6',q:'Smallest prime greater than 10',type:'short',a:'11'}
+      ]},
+
+      {id:'t2',title:'Operations & Order',xpTotal:70,locked:true,desc:'Add/subtract/multiply/divide; order of operations; negative numbers',practice:[
+        {id:'t2q1',q:'Calculate 5 × (2 + 3)',type:'mcq',opts:['10','15','25','20'],a:1},
+        {id:'t2q2',q:'Compute 576 ÷ 12',type:'short',a:'48'},
+        {id:'t2q3',q:'Evaluate: -3 + 7',type:'mcq',opts:['-10','4','10','-4'],a:1},
+        {id:'t2q4',q:'Order: 3 + 4 × 2 = ?',type:'mcq',opts:['14','11','7','10'],a:1},
+        {id:'t2q5',q:'(45 - 15) ÷ 3 = ?',type:'short',a:'10'},
+        {id:'t2q6',q:'Multiply: 125 × 8',type:'short',a:'1000'}
+      ]},
+
+      {id:'t3',title:'Fractions & Decimals',xpTotal:80,locked:true,desc:'Equivalent fractions, operations, convert to decimals & percents',practice:[
+        {id:'t3q1',q:'Convert 0.2 to a fraction',type:'mcq',opts:['1/2','1/3','1/4','1/5'],a:3},
+        {id:'t3q2',q:'Add: 3/5 + 4/5 = ?',type:'mcq',opts:['7/5','7/10','1 2/5','1.4'],a:0},
+        {id:'t3q3',q:'Reduce 18/24 to lowest terms',type:'short',a:'3/4'},
+        {id:'t3q4',q:'Convert 3/4 to decimal',type:'short',a:'0.75'},
+        {id:'t3q5',q:'Multiply: 2/3 × 9/4',type:'short',a:'3/2'},
+        {id:'t3q6',q:'0.375 as a fraction',type:'short',a:'3/8'}
+      ]},
+
+      {id:'t4',title:'Ratio & Proportion',xpTotal:70,locked:true,desc:'Ratios, rates, direct/indirect proportion',practice:[
+        {id:'t4q1',q:'If ratio a:b = 2:3 and a=10, find b',type:'short',a:'15'},
+        {id:'t4q2',q:'Direct proportion: if x=4 when y=6, what is x when y=9?',type:'short',a:'6'},
+        {id:'t4q3',q:'Simplify ratio 18:24',type:'short',a:'3:4'},
+        {id:'t4q4',q:'If 5 pens cost $12.50, cost of 2 pens?',type:'short',a:'5'},
+        {id:'t4q5',q:'If speed doubles, time taken (same distance) is',type:'mcq',opts:['halved','doubled','same','quadrupled'],a:0},
+        {id:'t4q6',q:'A map scale 1:50,000 — 2 cm on map represents how many km?',type:'short',a:'1'}
+      ]},
+
+      {id:'t5',title:'Percentages & Consumer Arithmetic',xpTotal:90,locked:true,desc:'Percent change, discounts, VAT, simple interest, profit/loss',practice:[
+        {id:'t5q1',q:'Simple interest: $200 at 4% for 2 years',type:'short',a:'16'},
+        {id:'t5q2',q:'A shirt costs $24 after a 20% discount. Original price?',type:'short',a:'30'},
+        {id:'t5q3',q:'Find 15% of 240',type:'short',a:'36'},
+        {id:'t5q4',q:'Profit if cost $40, sold $50',type:'short',a:'10'},
+        {id:'t5q5',q:'Percentage change from 50 to 40',type:'short',a:'-20'},
+        {id:'t5q6',q:'VAT 10% on $80 is',type:'short',a:'8'}
+      ]},
+
+      {id:'t6',title:'Algebra Basics',xpTotal:80,locked:true,desc:'Simple linear equations, substitution and formulas',practice:[
+        {id:'t6q1',q:'Solve: 2x + 5 = 13',type:'short',a:'4'},
+        {id:'t6q2',q:'If y = 3x and x=4, find y',type:'short',a:'12'},
+        {id:'t6q3',q:'Solve: x/4 = 5',type:'short',a:'20'},
+        {id:'t6q4',q:'Expand: (x+3)(x-2)',type:'short',a:'x^2 + x -6'},
+        {id:'t6q5',q:'Factor: x^2 - 9',type:'short',a:'(x-3)(x+3)'},
+        {id:'t6q6',q:'Solve: 3x - 7 = 2',type:'short',a:'3'}
+      ]},
+
+      {id:'t7',title:'Geometry Basics',xpTotal:70,locked:true,desc:'Perimeter, area of rectangles/triangles, basic angles',practice:[
+        {id:'t7q1',q:'Area of rectangle 5 × 8',type:'short',a:'40'},
+        {id:'t7q2',q:'Perimeter of triangle sides 3,4,5',type:'short',a:'12'},
+        {id:'t7q3',q:'Area of triangle base 6 height 4',type:'short',a:'12'},
+        {id:'t7q4',q:'Angle complement of 30°',type:'short',a:'60'},
+        {id:'t7q5',q:'Circle: relation between diameter and radius',type:'mcq',opts:['d=2r','d=r/2','d=r','none'],a:0},
+        {id:'t7q6',q:'Area of square side 7',type:'short',a:'49'}
+      ]},
+
+      {id:'t8',title:'Data & Statistics',xpTotal:60,locked:true,desc:'Mean, median, mode, simple probability',practice:[
+        {id:'t8q1',q:'Mean of 2,4,6,8',type:'short',a:'5'},
+        {id:'t8q2',q:'Median of 3,7,9',type:'short',a:'7'},
+        {id:'t8q3',q:'Mode of 2,2,3,4',type:'short',a:'2'},
+        {id:'t8q4',q:'Probability of heads in a fair coin toss',type:'mcq',opts:['1/2','1/4','1/3','1'],a:0},
+        {id:'t8q5',q:'Range of 5,9,12',type:'short',a:'7'},
+        {id:'t8q6',q:'If two dice rolled, probability of sum 7',type:'short',a:'1/6'}
+      ]}
+    ];
+
+    // --- Storage & state ---
+    const STORAGE_KEY='fm2_quest_v2';
+    let state = {xp:0,completed:[],badges:[]};
+    function loadState(){const s=localStorage.getItem(STORAGE_KEY);if(s)state=JSON.parse(s)}
+    function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+
+    // --- Admin PIN ---
+    const ADMIN_PIN = '1988'; // PIN chosen by the teacher (C)
+
+    // --- UI rendering ---
+    function renderTopics(){const container=document.getElementById('topic-list');container.innerHTML='';const total=topics.length;document.getElementById('quests-total').textContent=total;topics.forEach((t,i)=>{const unlocked = (i===0) || state.completed.includes(topics[i-1].id) || state.completed.includes(t.id);
+        const div=document.createElement('div');div.className='topic-card';if(!unlocked)div.classList.add('locked');div.style.minWidth='220px';div.style.maxWidth='260px';div.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><strong>${t.title}</strong><div class="muted small">${t.xpTotal} XP</div></div><div class="muted small" style="margin-top:6px">${t.desc}</div>`;
+        div.onclick = ()=>{if(!unlocked){alert('Locked — complete the previous quest to unlock this topic.');return} openTopic(i)};container.appendChild(div)})
+      document.getElementById('quests-done').textContent=state.completed.length;updateProgressUI();}
+
+    function openTopic(index){const t=topics[index];const area=document.getElementById('topic-area');area.innerHTML=`<h3>${t.title}</h3><p class="muted">${t.desc}</p><div style="display:flex;gap:8px;margin-bottom:10px"><button onclick="showPractice(${index})">Practice</button><button onclick="startSummative(${index})">Take Summative Quiz</button><button onclick="showExamples(${index})">Show Worked Examples</button></div><div id="topic-content"></div>`;showPractice(index)}
+
+    function showExamples(index){const el=document.getElementById('topic-content');el.innerHTML=`<div class="example"><strong>Worked example — strategy</strong><ol><li>Read the question and underline key data.</li><li>Choose operation(s) needed and write steps.</li><li>Compute neatly and check your units/answers.</li></ol><p class="muted">When I integrate your OneDrive notes this area will show a detailed worked example from your notes.</p></div>`}
+
+    function showPractice(index){const t=topics[index];const el=document.getElementById('topic-content');let html='';t.practice.forEach((p,i)=>{const pid = t.id + '_p' + i; html += '<div class="quiz-item"><div><strong>Practice '+(i+1)+'.</strong> '+p.q +'</div>';
+        if(p.type==='mcq'){p.opts.forEach((o,oi)=>{html += `<label><input type="radio" name="${pid}" value="${oi}"> ${o}</label><br>`});}
+        else {html += `<input type="text" id="${pid}">`}
+        html += `<div style="margin-top:6px"><button onclick="gradePractice('${index}','${i}')">Check</button> <span id="res_${pid}" style="margin-left:8px"></span></div></div><hr>`});
+      el.innerHTML = html + `<div style="margin-top:8px"><em>Tip:</em> Use these practice items to prepare for the summative quiz. When you are ready, click "Take Summative Quiz" to attempt the formal short test that can unlock the next quest.</div>`}
+
+    function gradePractice(topicIndex, qIndex){const t=topics[topicIndex];const p=t.practice[qIndex];const pid=t.id + '_p' + qIndex;const res=document.getElementById('res_'+pid);res.style.display='inline';if(p.type==='mcq'){const sel=document.querySelector('input[name="'+pid+'"]:checked');if(!sel){res.style.color='#7f1d1d';res.textContent=' Choose an answer';return} if(parseInt(sel.value)===p.a){res.style.color='#064e3b';res.textContent=' Correct';} else {res.style.color='#7f1d1d';res.textContent=' Incorrect'} } else {const v=document.getElementById(pid).value.trim(); if(!v){res.style.color='#7f1d1d';res.textContent=' Enter answer';return} if(v.toLowerCase()===p.a.toLowerCase() || v.includes(p.a)){res.style.color='#064e3b';res.textContent=' Looks correct';} else {res.style.color='#7f1d1d';res.textContent=' Not quite'}}}
+
+    // Summative quiz: 6 questions; must get 70% to pass
+    function startSummative(index){const t=topics[index];const el=document.getElementById('topic-content');let html=`<h4>Summative Quiz — ${t.title}</h4><form id="summ-form">`;
+      // pick up to 6 practice items (or fewer if topic has less)
+      const pick = t.practice.slice(0,6);
+      pick.forEach((p,i)=>{const id = 's_'+t.id+'_'+i; html += `<div class="quiz-item"><div><strong>Q${i+1}.</strong> ${p.q}</div>`; if(p.type==='mcq'){p.opts.forEach((o,oi)=>{html += `<label><input type=radio name='${id}' value='${oi}'> ${o}</label><br>`})} else {html += `<input type=text id='${id}'>`} html += `</div>` });
+      html += `<div style="margin-top:8px"><button onclick="gradeSummative(${index});return false">Submit Quiz</button> <span id="summ-result" style="margin-left:10px"></span></div></form>`; el.innerHTML=html}
+
+    function gradeSummative(index){const t=topics[index];const pick = t.practice.slice(0,6);let correct=0; pick.forEach((p,i)=>{const id='s_'+t.id+'_'+i; if(p.type==='mcq'){const sel=document.querySelector('input[name="'+id+'"]:checked'); if(sel && parseInt(sel.value)===p.a) correct++; } else {const v=document.getElementById(id).value.trim(); if(v && (v.toLowerCase()===p.a.toLowerCase() || v.includes(p.a))) correct++; }});
+      const score = Math.round((correct / pick.length) * 100); const resEl=document.getElementById('summ-result'); resEl.style.display='inline'; if(score>=70){resEl.style.color='#064e3b'; resEl.textContent = `Pass — ${score}% (${correct}/${pick.length}). Topic complete!`; markComplete(t.id,index);} else {resEl.style.color='#7f1d1d'; resEl.textContent = `Fail — ${score}% (${correct}/${pick.length}). Review practice and try again.`} }
+
+    function markComplete(topicId, index){ if(!state.completed.includes(topicId)){
+        state.completed.push(topicId);
+        // award XP equal to topic xpTotal
+        state.xp = (state.xp || 0) + topics[index].xpTotal;
+        state.badges.push(topics[index].title + ' Master');
+        saveState(); renderTopics(); alert('You unlocked a badge and earned ' + topics[index].xpTotal + ' XP!') }
+    }
+
+    // Drill (rapid-fire)
+    function startDrill(n){const area=document.getElementById('drill-area');let score=0;let i=0;const pool = [];
+      topics.forEach(t=>{t.practice.forEach(q=>pool.push({q,t}))});
+      shuffle(pool);
+      const selected = pool.slice(0,n);
+      area.innerHTML = '<div id="drill-question"></div><div style="margin-top:8px" id="drill-controls"></div>';
+      askNext();
+      function askNext(){if(i>=selected.length){area.innerHTML+='<div style="margin-top:8px">Done! Score: '+score+'/'+selected.length+'</div>'; if(score>=Math.ceil(selected.length*0.6)){state.xp += 10; saveState(); updateProgressUI(); alert('Well done — +10 XP awarded!')} return}
+        const cur = selected[i]; const dq=document.getElementById('drill-question'); dq.innerHTML = '<strong>Q'+(i+1)+'</strong> '+cur.q.q; let ctrl=''; if(cur.q.type==='mcq'){cur.q.opts.forEach((o,oi)=>{ctrl+=`<label><input type=radio name=drill value=${oi}> ${o}</label><br>`}); ctrl+=`<button onclick="submitDrill()">Submit</button>`} else {ctrl+=`<input id=drill-input> <button onclick="submitDrill()">Submit</button>`} document.getElementById('drill-controls').innerHTML = ctrl }
+      window.submitDrill = function(){const cur = selected[i]; if(cur.q.type==='mcq'){const sel=document.querySelector('input[name=drill]:checked'); if(!sel){alert('Select an answer'); return} if(parseInt(sel.value)===cur.q.a) score++; } else { const v=document.getElementById('drill-input').value; if(v && v.includes(cur.q.a)) score++; } i++; askNext(); }
+    }
+
+    function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+
+    // import notes
+    function importNotes(){const f=document.getElementById('file-input').files[0]; if(!f){alert('Please choose a file'); return} const reader=new FileReader(); reader.onload=e=>{localStorage.setItem('fm2_notes', e.target.result); alert('Notes imported and stored locally. Use Show Examples to see placeholder for the notes. I can parse and attach them into each topic on request.');}; reader.readAsText(f)}
+
+    function resetProgress(){ if(confirm('Reset all saved progress?')){ state={xp:0,completed:[],badges:[]}; saveState(); renderTopics(); updateProgressUI(); alert('Progress reset.'); }}
+
+    function downloadProgress(){const data=JSON.stringify(state); const blob=new Blob([data],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='fm2_progress.json'; a.click(); URL.revokeObjectURL(url)}
+
+    // progress UI
+    function updateProgressUI(){const done = state.completed.length; const total = topics.length; const pct = Math.round((done/total)*100); document.getElementById('overall-prog').style.width = pct+'%'; document.getElementById('quests-done').textContent = done; document.getElementById('xp-text').textContent = (state.xp||0) + ' XP'; document.getElementById('xp-badge').textContent = 'Lv '+(Math.floor((state.xp||0)/100)+1); renderBadges(); }
+    function renderBadges(){const el=document.getElementById('badges'); el.innerHTML=''; state.badges.forEach(b=>{el.innerHTML += `<div class="badge">${b}</div>`}) }
+
+    // --- Admin panel logic (PIN-protected) ---
+    function openAdmin(){
+      const pin = prompt('Enter Admin PIN to open panel:');
+      if(pin===null) return; // cancelled
+      if(pin === ADMIN_PIN){
+        document.getElementById('admin-panel').style.display='block';
+        populateAdminTopics();
+        populateAdminTopicSelect();
+      } else {
+        alert('Incorrect PIN.');
+      }
+    }
+
+    function populateAdminTopics(){const area=document.getElementById('admin-topic-edit'); area.innerHTML=''; topics.forEach((t,i)=>{const id='admin_title_'+i; area.insertAdjacentHTML('beforeend', `<div style="margin-bottom:8px"><input id="${id}" value="${t.title}" style="width:70%"> <button onclick="saveTopicTitle(${i})">Save</button></div>`)});
+    }
+
+    function saveTopicTitle(i){const id='admin_title_'+i; const v=document.getElementById(id).value.trim(); if(!v){alert('Title cannot be empty'); return} topics[i].title = v; renderTopics(); populateAdminTopics(); populateAdminTopicSelect(); alert('Title saved'); }
+
+    function populateAdminTopicSelect(){const sel=document.getElementById('admin-topic-select'); sel.innerHTML=''; topics.forEach((t,i)=>{const opt=document.createElement('option'); opt.value=i; opt.textContent = t.title; sel.appendChild(opt)}); loadAdminQuestions(); }
+
+    function loadAdminQuestions(){const sel=document.getElementById('admin-topic-select'); const idx = parseInt(sel.value||0); const t=topics[idx]; const area=document.getElementById('admin-question-area'); area.innerHTML=''; t.practice.forEach((p,pi)=>{
+      const pid = 'admin_q_'+idx+'_'+pi;
+      let html = `<div style="border:1px solid rgba(6,30,19,0.04);padding:8px;border-radius:8px;margin-bottom:8px">`;
+      html += `<div><strong>Q ${pi+1}</strong></div>`;
+      html += `<div>Question: <input id="${pid}_q" style="width:100%" value="${escapeHtml(p.q)}"></div>`;
+      html += `<div>Type: <select id="${pid}_type"><option value="mcq">mcq</option><option value="short">short</option><option value="fill">fill</option></select></div>`;
+      html += `<div id="${pid}_opts_area">Options (comma separated): <input id="${pid}_opts" style="width:100%" value="${p.opts?escapeHtml(p.opts.join(',')):''}"></div>`;
+      html += `<div>Answer: <input id="${pid}_a" style="width:100%" value="${escapeHtml(String(p.a))}"></div>`;
+      html += `<div style="margin-top:6px"><button onclick="saveQuestion(${idx},${pi})">Save</button> <button onclick="deleteQuestion(${idx},${pi})" style="background:#b91c1c">Delete</button></div>`;
+      html += `</div>`;
+      area.insertAdjacentHTML('beforeend', html);
+      document.getElementById(pid+'_type').value = p.type;
+    });
+      // add new question form
+      area.insertAdjacentHTML('beforeend', `<div style="padding:8px;border-radius:8px;border:1px dashed rgba(6,30,19,0.06)"><h5>Add new question</h5>Question: <input id="new_q" style="width:100%"><br>Type: <select id="new_type"><option value="mcq">mcq</option><option value="short">short</option><option value="fill">fill</option></select><br>Options (comma separated for mcq): <input id="new_opts" style="width:100%"><br>Answer: <input id="new_a" style="width:100%"><br><button style="margin-top:6px" onclick="addQuestion(${idx})">Add Question</button></div>`);
+    }
+
+    function saveQuestion(topicIdx, qIdx){const pid = 'admin_q_'+topicIdx+'_'+qIdx; const qText = document.getElementById(pid+'_q').value.trim(); const type = document.getElementById(pid+'_type').value; const optsRaw = document.getElementById(pid+'_opts').value.trim(); const answer = document.getElementById(pid+'_a').value.trim(); if(!qText || !answer){alert('Question and answer required'); return}
+      const qObj = { id: topics[topicIdx].id + '_q' + qIdx, q: qText, type: type, a: (type==='mcq'?parseInt(answer||0):answer) };
+      if(type==='mcq'){ qObj.opts = optsRaw.split(',').map(s=>s.trim()); }
+      topics[topicIdx].practice[qIdx] = qObj; alert('Question saved'); saveState(); loadAdminQuestions(); renderTopics(); }
+
+    function deleteQuestion(topicIdx, qIdx){ if(!confirm('Delete this question?')) return; topics[topicIdx].practice.splice(qIdx,1); saveState(); loadAdminQuestions(); renderTopics(); }
+
+    function addQuestion(topicIdx){const qText=document.getElementById('new_q').value.trim(); const type=document.getElementById('new_type').value; const optsRaw=document.getElementById('new_opts').value.trim(); const answer=document.getElementById('new_a').value.trim(); if(!qText || !answer){alert('Question and answer required'); return}
+      const qObj = { id: topics[topicIdx].id + '_q' + (topics[topicIdx].practice.length+1), q: qText, type: type, a: (type==='mcq'?parseInt(answer||0):answer) };
+      if(type==='mcq'){ qObj.opts = optsRaw.split(',').map(s=>s.trim()); }
+      topics[topicIdx].practice.push(qObj); saveState(); loadAdminQuestions(); renderTopics(); alert('Question added'); }
+
+    function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+    // boot
+    loadState(); renderTopics(); updateProgressUI();
+    // --- Teacher Mode Toggle ---
+  let teacherMode = false;
+  function toggleTeacherMode(){
+    if(!teacherMode){
+      const pin = prompt('Enter Admin PIN to enable Teacher Mode:');
+      if(pin!==ADMIN_PIN){ alert('Incorrect PIN'); return; }
+      teacherMode = true;
+      document.getElementById('admin-btn').style.display='inline-block';
+      alert('Teacher Mode enabled');
+    } else {
+      teacherMode = false;
+      document.getElementById('admin-panel').style.display='none';
+      document.getElementById('admin-btn').style.display='none';
+      alert('Teacher Mode disabled');
+    }
+  }
+</script>
+</body>
+</html>
